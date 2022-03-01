@@ -8,20 +8,28 @@ document
 - Python 3.9
 - virtualenv
 
-### INSTALLATION
+### BUILD
 
 ```
-pip install virtualenv
-python -m virtualenv venv
+pip install build
 ```
-activate venv and launch
+<br>
+launch command from the root of project
+
 ```
-pip install -r requirements.txt
+python -m build
 ```
+<br>
+install package in your enviroment
+
+```
+pip install path-to-dist-file
+```
+
 
 ### USAGE
 
-`python openapi_generator.py -pc 'postman collection path' -pe 'postman environment path' -o 'openapi doc path'`
+`openapi_generator -pc 'postman collection path' -pe 'postman environment path' -o 'openapi doc path'`
 
 ---
 
