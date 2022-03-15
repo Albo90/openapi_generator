@@ -46,45 +46,54 @@ class OpenAPIDoc(APIDoc):
         @staticmethod
         def _split_schema_in_subschemas(json_schema: Dict[str, Any],
                                         prefix: str, schema_name, schemas):
-            props = json_schema['properties']
             properties = {}
-            for prop_name in props:
-                if props[prop_name]['type'] == 'object':
-                    sub_component_name = f'{prefix}{prop_name[0].capitalize() + prop_name[1:]}'
-                    properties[prop_name] = {
-                        '$ref': f'{OpenAPIDoc.OpenAPIEndpoint._REF_PREFIX}{sub_component_name}'
-                    }
-                    OpenAPIDoc.OpenAPIEndpoint._split_schema_in_subschemas(props[prop_name], prefix, sub_component_name,
-                                                                           schemas)
-                elif props[prop_name]['type'] == 'array' and 'items' not in props[prop_name]:
-                    print(
-                        f'WARNING: Can not determine items type of {prop_name} in {prefix} default choose string type')
-                    properties[prop_name] = props[prop_name]
-                    properties[prop_name]['items'] = {'type': 'string'}
-                elif props[prop_name]['type'] == 'array' and (
-                        props[prop_name]['items']['type'] == 'array' or props[prop_name]['items']['type'] == 'object'):
-                    sub_component_name = f'{prefix}{prop_name[0].capitalize() + prop_name[1:]}'
-                    properties[prop_name] = {
-                        'type': 'array',
-                        'items': {
+            if json_schema['type'] == 'object':
+                props = json_schema['properties']
+                for prop_name in props:
+                    if props[prop_name]['type'] == 'object':
+                        sub_component_name = f'{prefix}{prop_name[0].capitalize() + prop_name[1:]}'
+                        properties[prop_name] = {
                             '$ref': f'{OpenAPIDoc.OpenAPIEndpoint._REF_PREFIX}{sub_component_name}'
                         }
-                    }
-                    OpenAPIDoc.OpenAPIEndpoint._split_schema_in_subschemas(props[prop_name]['items'], prefix,
-                                                                           sub_component_name, schemas)
-                elif props[prop_name]['type'] == 'null':
-                    properties[prop_name] = {'type': 'object'}
-                else:
-                    properties[prop_name] = props[prop_name]
+                        OpenAPIDoc.OpenAPIEndpoint._split_schema_in_subschemas(props[prop_name], prefix, sub_component_name,
+                                                                               schemas)
+                    elif props[prop_name]['type'] == 'array' and 'items' not in props[prop_name]:
+                        print(
+                            f'WARNING: Can not determine items type of {prop_name} in {prefix} default choose string type')
+                        properties[prop_name] = props[prop_name]
+                        properties[prop_name]['items'] = {'type': 'string'}
+                    elif props[prop_name]['type'] == 'array' and (
+                            props[prop_name]['items']['type'] == 'array' or props[prop_name]['items']['type'] == 'object'):
+                        sub_component_name = f'{prefix}{prop_name[0].capitalize() + prop_name[1:]}'
+                        properties[prop_name] = {
+                            'type': 'array',
+                            'items': {
+                                '$ref': f'{OpenAPIDoc.OpenAPIEndpoint._REF_PREFIX}{sub_component_name}'
+                            }
+                        }
+                        OpenAPIDoc.OpenAPIEndpoint._split_schema_in_subschemas(props[prop_name]['items'], prefix,
+                                                                               sub_component_name, schemas)
+                    elif props[prop_name]['type'] == 'null':
+                        properties[prop_name] = {'type': 'object'}
+                    else:
+                        properties[prop_name] = props[prop_name]
 
-            if schema_name in schemas:
-                print(f'WARNING: {schema_name} is already present in schemas please fix it manually')
-            schemas[schema_name] = dict()
-            # if 'required' in json_schema:
-            #     schemas[schema_name]['required'] = json_schema['required']
-            schemas[schema_name]['type'] = json_schema['type']
-            schemas[schema_name]['properties'] = properties
-            schemas[schema_name]['additionalProperties'] = False
+                if schema_name in schemas:
+                    print(f'WARNING: {schema_name} is already present in schemas please fix it manually')
+                schemas[schema_name] = dict()
+                # if 'required' in json_schema:
+                #     schemas[schema_name]['required'] = json_schema['required']
+                schemas[schema_name]['type'] = json_schema['type']
+                schemas[schema_name]['properties'] = properties
+                schemas[schema_name]['additionalProperties'] = False
+            else:
+                OpenAPIDoc.OpenAPIEndpoint._split_schema_in_subschemas(json_schema['items'], prefix, f'{prefix}Item', schemas)
+                schemas[schema_name] = {
+                            'type': 'array',
+                            'items': {
+                                '$ref': f'{OpenAPIDoc.OpenAPIEndpoint._REF_PREFIX}{prefix}Item'
+                            }
+                }
 
         @staticmethod
         def generate_schemas_from_example(prefix: str,
